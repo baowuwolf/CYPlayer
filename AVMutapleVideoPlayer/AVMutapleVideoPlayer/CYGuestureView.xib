@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="12121" systemVersion="16E195" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES">
+    <device id="retina4_7" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="12089"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view contentMode="scaleToFill" id="iN0-l3-epB" customClass="CYGuestureView">
+            <rect key="frame" x="0.0" y="0.0" width="586" height="284"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="mXA-CK-aY3">
+                    <rect key="frame" x="28" y="254" width="530" height="31"/>
+                    <connections>
+                        <action selector="progressChange:" destination="iN0-l3-epB" eventType="touchDragOutside" id="gz4-II-ZUa"/>
+                        <action selector="progressChange:" destination="iN0-l3-epB" eventType="touchDragInside" id="xpF-4N-w2i"/>
+                    </connections>
+                </slider>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="33:33" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Un6-DK-Hdo">
+                    <rect key="frame" x="0.0" y="263.5" width="30" height="12"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="10"/>
+                    <nil key="textColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="33:33" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="I82-qX-pau">
+                    <rect key="frame" x="556" y="263" width="30" height="12"/>
+                    <fontDescription key="fontDescription" type="system" pointSize="10"/>
+                    <nil key="textColor"/>
+                    <nil key="highlightedColor"/>
+                </label>
+            </subviews>
+            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <constraints>
+                <constraint firstItem="I82-qX-pau" firstAttribute="leading" secondItem="mXA-CK-aY3" secondAttribute="trailing" id="0ME-Yy-gmN"/>
+                <constraint firstAttribute="trailing" secondItem="I82-qX-pau" secondAttribute="trailing" id="BHX-3B-7xq"/>
+                <constraint firstItem="mXA-CK-aY3" firstAttribute="leading" secondItem="Un6-DK-Hdo" secondAttribute="trailing" id="F7v-tT-yyU"/>
+                <constraint firstAttribute="bottom" secondItem="mXA-CK-aY3" secondAttribute="bottom" id="Txf-y2-SZl"/>
+                <constraint firstItem="mXA-CK-aY3" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" constant="30" id="VyX-h4-5G9"/>
+                <constraint firstItem="Un6-DK-Hdo" firstAttribute="centerY" secondItem="mXA-CK-aY3" secondAttribute="centerY" id="XAw-GQ-yY4"/>
+                <constraint firstItem="Un6-DK-Hdo" firstAttribute="leading" secondItem="iN0-l3-epB" secondAttribute="leading" id="eTh-uT-n86"/>
+                <constraint firstItem="I82-qX-pau" firstAttribute="centerY" secondItem="mXA-CK-aY3" secondAttribute="centerY" id="jYp-Ry-UdD"/>
+                <constraint firstAttribute="trailing" secondItem="mXA-CK-aY3" secondAttribute="trailing" constant="30" id="qvK-hR-Aec"/>
+            </constraints>
+            <nil key="simulatedStatusBarMetrics"/>
+            <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
+            <connections>
+                <outlet property="currentTimeLabel" destination="Un6-DK-Hdo" id="CRc-sT-4bD"/>
+                <outlet property="durationTimeLabel" destination="I82-qX-pau" id="CAG-hm-toA"/>
+                <outlet property="progress" destination="mXA-CK-aY3" id="ZMe-gn-Xt1"/>
+            </connections>
+            <point key="canvasLocation" x="103" y="-188"/>
+        </view>
+    </objects>
+</document>
