@@ -10,6 +10,7 @@
 #import "NSString+TimeFunctions.h"
 #import "RACEXTScope.h"
 #import "CYVideoQueueModel.h"
+#import "AVPlayerItem+List.h"
 
 CGFloat getVideoDuration(NSURL*URL) {
     NSDictionary *opts = [NSDictionary dictionaryWithObject:[NSNumber numberWithBool:YES]
@@ -45,32 +46,34 @@ CGFloat getVideoDuration(NSURL*URL) {
 
 - (instancetype)init {
     self = [super init];
-//    NSArray *views = [[NSBundle mainBundle] loadNibNamed:@"CYPlayerView" owner:self options:nil];
-//    if ([views count]) {
-//        self = views[0];
-//    } else {
-//        self = nil;
-//    }
-
     if (self) {
         self.backgroundColor = [UIColor blackColor];
     }
     return self;
 }
 
-//+ (Class)layerClass {
-//    return [AVPlayerLayer class];
-//}
+- (void)setupWithURLs:(NSArray*)stirngFormatURLs andHeader:(NSDictionary*)header {
+    self.header = header;
+    CYVideoQueueModel *queueModel = [[CYVideoQueueModel alloc] initWithUrls:stirngFormatURLs header:header];
+    [self setupPlayerWithModel:queueModel];
+    self.queueModel = queueModel;
+    
+    if ([self.delegate respondsToSelector:@selector(receiveDuration:)]) {
+        [self.delegate receiveDuration:queueModel.duration];
+    }
+}
 
 - (void)setupPlayerWithModel:(CYVideoQueueModel*)queueModel {
-    CYPlayer *player = [[CYPlayer alloc] initWithItems:[queueModel allPlayeItemQueue]];
-    //AVPlayerLayer*playerLayer = (AVPlayerLayer*)[self layer];
+    AVPlayerItem * headerItem  = [queueModel headerItem];
+    CYPlayer *player = [[CYPlayer alloc] initWithPlayerItem:headerItem];
     self.playerLayer = [AVPlayerLayer playerLayerWithPlayer:player];
     [self.layer addSublayer:_playerLayer];
     self.player = player;
     [player play];
     [self setNeedsLayout];
 
+    //Add Obbserver
+    [self addPlayEndObserver:headerItem];
     CMTime interval = CMTimeMakeWithSeconds(1, 1 * NSEC_PER_SEC);
     __weak typeof(self)weakSelf = self;
     self.timeObser              = \
@@ -90,9 +93,10 @@ CGFloat getVideoDuration(NSURL*URL) {
             }
         }
     }];
-    self.player = player;
+
 }
 
+#if (PlayerScheme==PlayerScheme1)
 - (void)rebuildPlayerWithModel:(NSArray<AVPlayerItem*>*)playItemQueue {
     if (self.player && self.timeObser) {
         [self.player pause];
@@ -129,19 +133,18 @@ CGFloat getVideoDuration(NSURL*URL) {
     }];
     self.player = player;
 }
-
-- (void)setupWithURLs:(NSArray*)stirngFormatURLs andHeader:(NSDictionary*)header {
-    self.header = header;
-    CYVideoQueueModel *queueModel = [[CYVideoQueueModel alloc] initWithUrls:stirngFormatURLs header:header];
-    [self setupPlayerWithModel:queueModel];
-    self.queueModel = queueModel;
-
-    if ([self.delegate respondsToSelector:@selector(receiveDuration:)]) {
-        [self.delegate receiveDuration:queueModel.duration];
+#elif (PlayerScheme==PlayerScheme2)
+- (void)replacePlayItem:(AVPlayerItem *)playItem {
+    if (playItem != self.player.currentItem) {
+        [self removePlayEndObserver:[self.player currentItem]];
+        [self.player replaceCurrentItemWithPlayerItem:playItem];
+        [self addPlayEndObserver:playItem];
     }
 }
+#endif
 
 - (void)seekTo:(NSTimeInterval)time {
+#if (PlayerScheme==PlayerScheme1)
     @weakify(self);
     [self.queueModel seekTo:time completation:^(NSArray < AVPlayerItem* > *playItemQueue, NSTimeInterval sectionInterval) {
         @strongify(self);
@@ -152,13 +155,48 @@ CGFloat getVideoDuration(NSURL*URL) {
             [self.player seekToTime:CMTimeMakeWithSeconds(sectionInterval, 1)];
         }
     }];
+#elif (PlayerScheme==PlayerScheme2)
+    @weakify(self);
+    [self.queueModel seekTo:time completation:^(AVPlayerItem*playItem, NSTimeInterval sectionInterval) {
+        @strongify(self);
+        [self replacePlayItem:playItem];
+        [self.player seekToTime:CMTimeMakeWithSeconds(sectionInterval, 1)];
+    }];
+#else
+#endif
 }
 
+- (void)addPlayEndObserver:(AVPlayerItem*)playeItem {
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(itemDidFinishPlaying:) name:AVPlayerItemDidPlayToEndTimeNotification object:playeItem];
+}
 
+- (void)removePlayEndObserver:(AVPlayerItem*)playeItem {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:playeItem];
+}
+
+-(void)itemDidFinishPlaying:(NSNotification *) notification {
+    // Will be called when AVPlayer finishes playing playerItem
+    //[self removePlayEndObserver:[self.player currentItem]];
+    AVPlayerItem * nextPlayItem = [[self.player currentItem] next];
+    if (nextPlayItem) {
+        [self replacePlayItem:nextPlayItem];
+        [self.queueModel updateBasePlayProgressTime:nextPlayItem];
+        [self.player seekToTime:kCMTimeZero];
+        [self.player play];
+    }else {
+        if ([self.delegate respondsToSelector:@selector(didFinishedPlay)]) {
+            [self.delegate didFinishedPlay];
+        }
+    }
+}
 
 - (void)layoutSubviews {
     [super layoutSubviews];
     [self.playerLayer setFrame:self.bounds];
+}
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 @end

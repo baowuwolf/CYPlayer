@@ -19,8 +19,14 @@
 @property (nonatomic,assign) NSTimeInterval                 duration;
 @property (nonatomic,assign) NSTimeInterval                 baseProgressTime;//currentPlayitem+baseProgressTime = realProgress
 
-
+#if (PlayerScheme == PlayerScheme1)
 - (void)seekTo:(NSTimeInterval)seekToTime completation:(void (^)(NSArray<AVPlayerItem*>*playItemQueue,NSTimeInterval sectionInterval))completation;
+#elif (PlayerScheme == PlayerScheme2)
+- (void)seekTo:(NSTimeInterval)seekToTime completation:(void (^)(AVPlayerItem*playItem,NSTimeInterval sectionInterval))completation;
+- (AVPlayerItem*)headerItem;
+#endif
+
+- (void)updateBasePlayProgressTime:(AVPlayerItem*)playItem;
 
 - (instancetype)initWithUrls:(NSArray<NSString*>*)stirngFormatURLs header:(NSDictionary*)header;
 

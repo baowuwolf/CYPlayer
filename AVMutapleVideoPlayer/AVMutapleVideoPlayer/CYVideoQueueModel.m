@@ -7,6 +7,7 @@
 //
 
 #import "CYVideoQueueModel.h"
+#import "AVPlayerItem+List.h"
 
 @interface CYVideoModel : NSObject
 
@@ -64,17 +65,18 @@
         _allPlayeItemQueue = [NSMutableArray new];
         _baseProgressTime  = 0;
         NSTimeInterval beginTime = 0;
+        AVPlayerItem  *preItem   = nil;
         for (NSString *URLString in stirngFormatURLs) {
             if (![URLString isKindOfClass:[NSString class]]) {
                 NSLog(@"%s:input is not a string:%@",__FUNCTION__,URLString);
                 continue;
             }
             NSArray *keys = @[
-                              @"tracks",
-                              @"duration",
-                              @"commonMetadata",
-                              @"availableMediaCharacteristicsWithMediaSelectionOptions"
-                              ];
+                @"tracks",
+                @"duration",
+                @"commonMetadata",
+                @"availableMediaCharacteristicsWithMediaSelectionOptions"
+            ];
             NSDictionary  *options = @{@"AVURLAssetHTTPHeaderFieldsKey":header?:@{},
                                        AVURLAssetPreferPreciseDurationAndTimingKey:[NSNumber numberWithBool:YES]};
             NSURL         *URL      = [NSURL URLWithString:URLString];
@@ -83,11 +85,15 @@
             NSTimeInterval duration = CMTimeGetSeconds(asset.duration);
             CYVideoModel  *infoItem = [CYVideoModel createItemWithBeginTime:beginTime
                                                                    duration:duration];
-            beginTime += duration;
-            _duration += duration;
+            beginTime   += duration;
+            _duration   += duration;
+            preItem.next = item;
+            preItem      = item;
             [_allPlayeItemQueue addObject:item];
-            [_allVideoInfoQueue addObject:infoItem];
-            
+            if (infoItem) {
+                [_allVideoInfoQueue addObject:infoItem];
+            }
+
             NSLog(@"--- duration = %f",duration);
         }
         if (![_allPlayeItemQueue count]) {
@@ -100,14 +106,33 @@
 
 - (NSMutableArray<AVPlayerItem*>*)copyedPlayItemQueue {
     NSMutableArray<AVPlayerItem*> *items = [NSMutableArray new];
-    
+
     for (int i = 0; i < [self.allPlayeItemQueue count];i++) {
         AVPlayerItem *item = [self.allPlayeItemQueue[i] copy];
         [items addObject:item];
     }
-    
+
     return items;
 }
+
+- (void)updateBasePlayProgressTime:(AVPlayerItem*)playItem {
+    NSTimeInterval interval = 0;
+    for (NSInteger i = 0; i < [self.allPlayeItemQueue count];i++) {
+        AVPlayerItem *item = self.allPlayeItemQueue[i];
+        if (item==playItem) {
+            _baseProgressTime = interval;
+            return;
+        } else {
+            interval += self.allVideoInfoQueue[i].s_duration;
+        }
+    }
+}
+
+- (AVPlayerItem *)headerItem {
+    return [self.allPlayeItemQueue firstObject];
+}
+
+#if (PlayerScheme==PlayerScheme1)
 
 - (void)seekTo:(NSTimeInterval)seekToTime completation:(void (^)(NSArray<AVPlayerItem*>*playItemQueue,NSTimeInterval sectionInterval))completation {
     _baseProgressTime = 0;
@@ -115,7 +140,7 @@
         NSLog(@"%s:info和item 队列信息不匹配",__FUNCTION__);
         return;
     }
-    NSMutableArray<AVPlayerItem*> *playItemQueue = [self copyedPlayItemQueue];
+    NSMutableArray<AVPlayerItem*> *playItemQueue = [self allPlayeItemQueue];
     for (NSInteger i = 0; i < [self.allVideoInfoQueue count];i++) {
         CYVideoModel *item = self.allVideoInfoQueue[i];
         if ([item isInTime:seekToTime]) {
@@ -129,5 +154,29 @@
     }
     completation(nil,0);
 }
+#elif (PlayerScheme == PlayerScheme2)
+- (void)seekTo:(NSTimeInterval)seekToTime completation:(void (^)(AVPlayerItem*playItem,NSTimeInterval sectionInterval))completation {
+    _baseProgressTime = 0;
+    if ([self.allPlayeItemQueue count] != [self.allVideoInfoQueue count]) {
+        NSLog(@"%s:info和item 队列信息不匹配",__FUNCTION__);
+        return;
+    }
+    AVPlayerItem*headerPlayItem = [[self allPlayeItemQueue] firstObject];
+    for (NSInteger i = 0; i < [self.allVideoInfoQueue count];i++) {
+        CYVideoModel *item = self.allVideoInfoQueue[i];
+        if ([item isInTime:seekToTime]) {
+            NSTimeInterval sectionSeekTime = [item sectionSeekTime:seekToTime];
+            completation(headerPlayItem,sectionSeekTime);
+            return;
+        } else {
+            headerPlayItem = headerPlayItem.next;
+            _baseProgressTime += item.s_duration;
+        }
+    }
+    completation(nil,0);
+}
+#else
+
+#endif
 
 @end

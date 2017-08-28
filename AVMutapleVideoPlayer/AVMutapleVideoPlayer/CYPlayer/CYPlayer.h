@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 
-@interface CYPlayer : AVQueuePlayer
+@interface CYPlayer : AVPlayer
 
 @end
 
@@ -17,6 +17,7 @@
 
 - (void)receiveDuration:(NSTimeInterval)duration;
 - (void)progressTimeDidChange:(NSTimeInterval)time;
+- (void)didFinishedPlay;
 
 @end
 
